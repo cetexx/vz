@@ -6,30 +6,60 @@ services:
         volumes:
             - ../src:/srv/www
         build: nginx
+        networks:
+            - vz
+
     php-fpm:
         container_name: php-fpm
         build: php
         volumes_from:
             - nginx
+        depends_on:
+            - mysql
+            - redis
+            - meilisearch
+        networks:
+            - vz
+
     mysql:
         image: mysql:8.0
         container_name: mysql
         restart: unless-stopped
         environment:
             MYSQL_ROOT_PASSWORD: root
-            MYSQL_DATABASE: database
-            MYSQL_USER: user
-            MYSQL_PASSWORD: password
+            MYSQL_DATABASE: laravel
+            MYSQL_USER: vz
+            MYSQL_PASSWORD:
         ports:
             - "3306:3306"
         volumes:
             - mysql_data:/var/lib/mysql
         networks:
-            - backend
+            - vz
+
+    meilisearch:
+        image: getmeili/meilisearch:latest
+        container_name: meilisearch
+        environment:
+            - MEILI_NO_ANALYTICS=true
+            - MEILI_MASTER_KEY=
+        ports:
+            - "7700:7700"
+        networks:
+            - vz
+
+    redis:
+        image: redis:latest
+        container_name: redis
+        restart: unless-stopped
+        ports:
+            - "6379:6379"
+        networks:
+            - vz
 
 volumes:
     mysql_data:
 
 networks:
-    backend:
+    vz:
         driver: bridge
